@@ -31,7 +31,7 @@ function WritePBRTFile(PBRTFile, PBRTXMLFile, hints)
 %% Parameters
 % scan the PBRT-XML document
 [pbrtDoc, idMap] = ReadSceneDOM(PBRTXMLFile);
-
+idMap
 % open a new text file to write in
 pbrtFID = fopen(PBRTFile, 'w');
 
@@ -87,6 +87,14 @@ else
     writeCamera(pbrtFID, idMap, cameraNodeID, hints);
 end
 
+% TL Add a Renderer node
+rendererNodeID = getNodesByIdentifier(idMap, 'Renderer');
+if isempty(rendererNodeID)
+    warning('Scene does not specify a Renderer! Will use samplerrenderer.');
+else
+    writeRenderer(pbrtFID, idMap, rendererNodeID{1}, hints);
+end
+
 %% World-level PBRT objects
 
 % open the "world" declaration
@@ -115,7 +123,7 @@ end
 
 % declare an Attribute block for each "Attribute" node
 attribNodeIDs = getNodesByIdentifier(idMap, 'Attribute');
-for ii = 1:numel(attribNodeIDs)
+for ii = 1:numel(attribNodeIDs)    
     writeAttribute(pbrtFID, idMap, attribNodeIDs{ii}, hints);
 end
 
@@ -291,6 +299,15 @@ fprintf(fid, '# Sampler\n');
 PrintPBRTStatement(fid, identifier, type, params);
 fprintf(fid, '\n');
 
+function writeRenderer(fid, idMap, rendererNodeID, hints)
+% scan the sampler document node
+node = idMap(rendererNodeID);
+[identifier, type] = getIdentifierAndType(node);
+params = getParameters(node);
+
+fprintf(fid, '# Renderer\n');
+PrintPBRTStatement(fid, identifier, type, params);
+fprintf(fid, '\n');
 
 function writeFilter(fid, idMap, filterNodeID, hints)
 % scan the filter document node
